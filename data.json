@@ -1,0 +1,14 @@
+[
+{
+"name": "Live Stream 1",
+"url": "https://www.google.com/search?q=https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+},
+{
+"name": "Sample Stream 2",
+"url": "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"
+},
+{
+"name": "Ocean View",
+"url": "https://www.google.com/search?q=https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8"
+}
+]
