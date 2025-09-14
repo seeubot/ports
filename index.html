@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HLS Advanced Video Player</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease;
+        }
+        
+        /* Custom styles for the notification box */
+        .notification-box {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 9999px; /* full rounded */
+            background: linear-gradient(to right, #10B981, #34D399); /* Green-500 gradient */
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+            display: none;
+            animation: slideIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* Animation for the notification box */
+        @keyframes slideIn {
+            from { top: 0; opacity: 0; }
+            to { top: 2rem; opacity: 1; }
+        }
+        
+        /* Bubbly button effect */
+        .bubbly-button {
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bubbly-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .bubbly-button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+    </style>
+</head>
+<body class="bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+    <div class="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8 lg:p-10 space-y-6 lg:space-y-8">
+
+        <!-- Header Section with Welcome Message and Developer Info -->
+        <div class="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left space-y-4 sm:space-y-0">
+            <div class="space-y-2">
+                <p class="text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300">Hello friends</p>
+                <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400">Oka 50rs unte phonepay cheyandhi friends koncham urgent</p>
+            </div>
+            <div class="flex flex-col items-center sm:items-end">
+                <h1 class="text-lg sm:text-xl font-bold text-indigo-600 dark:text-indigo-400">Developer: "kushwant"</h1>
+                <h6 class="text-xs text-gray-400 dark:text-gray-500 mt-1">Debugging done by: "Gopi"</h6>
+            </div>
+        </div>
+
+        <!-- Video Player Container -->
+        <div class="bg-black rounded-2xl overflow-hidden shadow-lg w-full aspect-video">
+            <video id="video" controls class="w-full h-full object-cover"></video>
+        </div>
+
+        <!-- Controls and Stream Selector Section -->
+        <div class="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0 lg:space-x-6">
+            
+            <!-- Stream Selector -->
+            <div class="w-full lg:w-2/3">
+                <label for="stream-selector" class="sr-only">Select a Stream</label>
+                <div class="relative">
+                    <select id="stream-selector" class="w-full px-6 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-700 cursor-pointer text-gray-800 dark:text-gray-200 appearance-none transition-colors duration-200">
+                        <option value="" disabled selected>Select a Stream</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-700 dark:text-gray-300">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Skip/Rewind Buttons -->
+            <div class="flex justify-center w-full lg:w-1/3 space-x-4">
+                <button id="rewind-btn" class="bubbly-button w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold shadow-lg">
+                    <span class="inline-block transform rotate-180">&#x21BA;</span> 15s
+                </button>
+                <button id="skip-btn" class="bubbly-button w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold shadow-lg">
+                    15s <span class="inline-block">&#x21BA;</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Custom Notification Box -->
+        <div id="notification" class="notification-box"></div>
+
+    </div>
+
+    <!-- HLS.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('video');
+            const streamSelector = document.getElementById('stream-selector');
+            const rewindBtn = document.getElementById('rewind-btn');
+            const skipBtn = document.getElementById('skip-btn');
+            const notification = document.getElementById('notification');
+
+            const HLS_CDN = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+            // NOTE: This URL points to a raw markdown file, but in a real app,
+            // this should be the raw link to a .json file on GitHub or a server.
+            const GITHUB_JSON_URL = 'https://raw.githubusercontent.com/Kushwant/Kushwant.github.io/main/streams.json';
+            const REFRESH_INTERVAL = 30000; // Check for updates every 30 seconds
+
+            let hls;
+            let currentStreams = [];
+
+            // Function to show a custom notification message
+            function showNotification(message) {
+                notification.textContent = message;
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000); // Hide after 5 seconds
+            }
+
+            // Function to load and play an HLS stream
+            function loadStream(url) {
+                if (Hls.isSupported()) {
+                    if (hls) {
+                        hls.destroy();
+                    }
+                    hls = new Hls();
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        video.play();
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = url;
+                    video.addEventListener('loadedmetadata', () => {
+                        video.play();
+                    });
+                } else {
+                    console.error('HLS is not supported in this browser.');
+                }
+            }
+
+            // Function to fetch stream data from the GitHub JSON
+            async function fetchStreams() {
+                try {
+                    const response = await fetch(GITHUB_JSON_URL);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const newStreams = await response.json();
+
+                    if (newStreams.length > currentStreams.length) {
+                        const newStreamNames = newStreams.filter(
+                            newStream => !currentStreams.some(oldStream => oldStream.url === newStream.url)
+                        ).map(s => s.name);
+                        
+                        if (newStreamNames.length > 0) {
+                            showNotification(`New stream(s) added: ${newStreamNames.join(', ')}`);
+                        }
+                    }
+
+                    currentStreams = newStreams;
+                    updateStreamSelector(newStreams);
+
+                } catch (error) {
+                    console.error('Failed to fetch streams:', error);
+                    showNotification('Failed to update streams. Please check the network connection.');
+                }
+            }
+
+            // Function to update the stream selector dropdown
+            function updateStreamSelector(streams) {
+                const selectedUrl = streamSelector.value;
+                streamSelector.innerHTML = '<option value="" disabled selected>Select a Stream</option>';
+                streams.forEach(stream => {
+                    const option = document.createElement('option');
+                    option.value = stream.url;
+                    option.textContent = stream.name;
+                    streamSelector.appendChild(option);
+                });
+                // Re-select the previously selected stream if it still exists
+                if (selectedUrl && streams.some(stream => stream.url === selectedUrl)) {
+                    streamSelector.value = selectedUrl;
+                }
+            }
+
+            // Event listener for stream selection
+            streamSelector.addEventListener('change', (event) => {
+                const url = event.target.value;
+                if (url) {
+                    loadStream(url);
+                }
+            });
+
+            // Event listener for the rewind button
+            rewindBtn.addEventListener('click', () => {
+                if (video.currentTime >= 15) {
+                    video.currentTime -= 15;
+                } else {
+                    video.currentTime = 0;
+                }
+            });
+
+            // Event listener for the skip button
+            skipBtn.addEventListener('click', () => {
+                video.currentTime += 15;
+            });
+            
+            // Initial fetch and set up recurring fetches
+            fetchStreams();
+            setInterval(fetchStreams, REFRESH_INTERVAL);
+        });
+    </script>
+</body>
+</html>
+
