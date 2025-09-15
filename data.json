@@ -1,23 +1,8 @@
-
 {
-"streams": [
-{
-"name": "Sony LIV HD1",
-"streamUrl": "https://jiotvmblive.cdn.jio.com/bpk-tv/Star_Sports_HD2_BTS/output/index.mpd",
 "drmConfig": {
 "clearKeys": {
-"keyId1": "9457eb90129456fa8ea95e10ba4ac51e",
-"keyId2": "9457eb90129456fa8ea95e10ba4ac51e"
-},
-"widevine": {
-"licenseUrl": "https://www.google.com/search?q=https://widevine-proxy.appspot.com/proxy"
-}
+"9457eb90129456fa8ea95e10ba4ac51e": "e620a970cea474c491ac78ae71a4d764"
 }
 },
-{
-"name": "Sony LIV HD2",
-"streamUrl": "https://www.google.com/search?q=https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd",
-"drmConfig": null
-}
-]
+"streamUrl": "https://jiotvmblive.cdn.jio.com/bpk-tv/Star_Sports_HD2_BTS/output/index.mpd"
 }
