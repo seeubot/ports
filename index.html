@@ -1,115 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JW Player with DRM</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use Inter font from Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Enhanced Sony LIV Player</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-        /* Custom CSS to maintain a 16:9 aspect ratio for the video player */
-        .video-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            background-color: #000;
-        }
+  <style>
+    :root {
+      --primary-color: #facc15;
+      --accent-color: #06b6d4;
+      --bg-color: #000;
+      --text-color: #f3f4f6;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: var(--bg-color);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .shaka-video-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-color);
+      object-fit: contain;
+    }
 
-        .video-container #jwplayerDiv {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+    /* Player Controls Customization */
+    .shaka-controls-container {
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    }
+    .shaka-play-button, .shaka-mute-button, .shaka-fullscreen-button {
+      background-color: transparent !important;
+      border: none;
+    }
+    .shaka-button-text, .shaka-time, .shaka-duration {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    .shaka-controls-container .shaka-seek-bar-container .shaka-seek-bar {
+      background: var(--border-color);
+      border-radius: 50px;
+      height: 8px;
+    }
+    .shaka-seek-bar-container .shaka-seek-bar-played {
+      background: var(--primary-color) !important;
+      border-radius: 50px;
+    }
+    .shaka-seek-bar-container .shaka-seek-bar-buffered {
+      background: rgba(255, 255, 255, 0.3) !important;
+      border-radius: 50px;
+    }
+    .shaka-seek-bar-container .shaka-seek-bar-thumb {
+      background-color: var(--primary-color) !important;
+      border: 3px solid #fff;
+      box-shadow: 0 0 5px rgba(0,0,0,0.4);
+      height: 16px;
+      width: 16px;
+      margin-top: -4px;
+      transition: transform 0.2s ease;
+    }
+    .shaka-seek-bar-container .shaka-seek-bar-thumb:hover {
+      transform: scale(1.2);
+    }
+    .shaka-volume-bar-container .shaka-volume-bar {
+      background: var(--border-color) !important;
+      border-radius: 50px;
+      height: 8px;
+    }
+    .shaka-volume-bar-container .shaka-volume-bar-level {
+      background: var(--accent-color) !important;
+      border-radius: 50px;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      backdrop-filter: blur(6px);
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      animation: fadeIn .5s ease;
+      transition: opacity .5s;
+    }
+    .modal.hidden { display: none !important; }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px 25px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      color: var(--text-color);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      backdrop-filter: blur(12px);
+      transform: scale(.95);
+      animation: scaleIn .4s ease forwards;
+    }
+    .modal-content h2 { font-size: 24px; font-weight: 700; color: var(--primary-color); margin-bottom: 16px; }
+    .modal-content p { font-size: 16px; color: #d1d5db; margin-bottom: 24px; line-height: 1.5; }
+    .modal-content strong { color: #fff; }
+    .modal-content .btn { 
+      width: 100%; 
+      padding: 12px; 
+      font-size: 16px; 
+      border: none; 
+      border-radius: 12px; 
+      margin-bottom: 12px; 
+      cursor: pointer; 
+      transition: .3s; 
+      display: inline-block; 
+      font-weight: 600;
+      text-decoration: none;
+    }
+    #joinButton { 
+      background: linear-gradient(to right, #3b82f6, #06b6d4); 
+      color: #fff; 
+    }
+    #joinButton:hover { 
+      background: linear-gradient(to right, #2563eb, #0891b2); 
+      transform: scale(1.02); 
+    }
+    #closeButton { 
+      background: rgba(255,255,255,0.1); 
+      color: var(--text-color); 
+    }
+    #closeButton:hover { 
+      background: rgba(255,255,255,0.15); 
+      transform: scale(1.02); 
+    }
+
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes scaleIn { to { transform: scale(1); opacity: 1 } }
+
+    /* Banner */
+    .tg-banner {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: linear-gradient(135deg, rgba(29,161,242,0.85), rgba(0,119,181,0.85));
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      z-index: 1000;
+      text-decoration: none;
+      transition: transform .2s ease;
+    }
+    .tg-banner:hover {
+      transform: scale(1.05);
+    }
+    .tg-banner img { width: 28px; height: 28px; margin-right: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); display: block; }
+    .tg-banner span { font-size: 15px; font-weight: 600; letter-spacing: .4px; }
+
+    /* Chrome Only Modal */
+    #chromeModal .modal-content {
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid rgba(255, 0, 0, 0.3);
+    }
+    #chromeModal h2 {
+      color: #f87171;
+    }
+
+    /* Loading Spinner */
+    .spinner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      transition: opacity 0.3s;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <!-- Main Container -->
-    <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden p-6 md:p-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-6">Live Stream Player</h1>
-        
-        <!-- Video Player Container with 16:9 Aspect Ratio -->
-        <div class="video-container rounded-lg shadow-xl overflow-hidden mb-4">
-            <div id="jwplayerDiv"></div>
-        </div>
+<body>
 
-        <!-- Status Message Box -->
-        <div id="statusMessage" class="bg-blue-100 text-blue-800 p-4 rounded-lg text-center font-medium">
-            Loading player...
-        </div>
+  <!-- Telegram Banner -->
+  <a id="tgBannerLink" class="tg-banner" href="https://t.me/+e3-eAje291cxNGNl" target="_blank" rel="noopener">
+    <img src="https://i.pinimg.com/originals/31/2a/f9/312af9235aadad69655688eaee97eabf.png" alt="Telegram">
+    <span>Join @ᴍᴀᴛᴄʜᴇꜱ ʟɪɴᴋꜱ</span>
+  </a>
 
-        <p class="text-gray-500 text-sm mt-4 text-center">
-            This player is configured to handle your specific stream and DRM keys.
-        </p>
+  <!-- Telegram Popup Modal -->
+  <div id="telegramModal" class="modal" aria-hidden="false" role="dialog" aria-modal="true">
+    <div class="modal-content" role="document" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+      <h2 id="modalTitle">Join our Telegram</h2>
+      <p id="modalDesc">Stay updated with the latest <strong>Live Match Links</strong> and updates. Click below to join our official Telegram channel.</p>
+      <a id="joinLink" href="https://t.me/+e3-eAje291cxNGNl" target="_blank" rel="noopener noreferrer" class="btn">
+        <button id="joinButton" type="button">Join Telegram</button>
+      </a>
+      <button id="closeButton" class="btn" type="button">Maybe Later</button>
     </div>
+  </div>
 
-    <!-- JW Player Script -->
-    <script src="https://content.jwplatform.com/libraries/SAHhwvZq.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const statusMessage = document.getElementById('statusMessage');
+  <!-- Chrome Only Modal -->
+  <div id="chromeModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <h2>Please Open in Chrome</h2>
+      <p>This site is optimized for <strong>Google Chrome</strong>. Please open the link in Chrome browser for the best experience.</p>
+    </div>
+  </div>
 
-            // Function to update the status message with a given text and color
-            function updateStatus(message, color = 'blue') {
-                statusMessage.textContent = message;
-                statusMessage.className = `bg-${color}-100 text-${color}-800 p-4 rounded-lg text-center font-medium transition-colors duration-300`;
-            }
+  <div class="shaka-video-container" data-shaka-player>
+    <video autoplay playsinline preload="metadata" poster=""></video>
+  </div>
 
-            // Setup the JW Player instance with the provided video URL and DRM information
-            const player = jwplayer("jwplayerDiv").setup({
-                file: "https://livestream.sunnxt.com/6a6520e446604c6e9840e5bf3a3a7d95/GeminiMusicHDB_IN_index.mpd",
-                type: "dash",
-                autostart: true,
-                drm: {
-                    clearkey: {
-                        keyId: "76230567f3c04513a7e5d1249ab65983",
-                        key: "4ee6dc9a99d894dc41b0878d6ea22790"
-                    }
-                }
-            });
+  <!-- Loading spinner overlay -->
+  <div id="loadingOverlay" class="spinner-overlay">
+    <div class="spinner"></div>
+  </div>
 
-            // Player Event Listeners for advanced handling
-            player.on('ready', () => {
-                updateStatus('Player is ready.', 'green');
-            });
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      /********** Chrome check **********/
+      const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+      if (!isChrome) {
+        const chromeModal = document.getElementById('chromeModal');
+        chromeModal.classList.remove('hidden');
+        chromeModal.setAttribute('aria-hidden', 'false');
+        return; // block video setup in non-Chrome
+      }
+      
+      const loadingOverlay = document.getElementById('loadingOverlay');
 
-            player.on('play', () => {
-                updateStatus('Playing stream...', 'green');
-            });
+      /********** Fetch stream data from a simulated secure endpoint **********/
+      async function fetchStreamData() {
+        // In a production environment, this would be a secure, authenticated API endpoint.
+        // For this example, we're fetching from a mock JSON file.
+        const url = 'https://gist.githubusercontent.com/username/gistid/raw/stream-data.json'; // This is a placeholder URL
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error('Failed to fetch stream data:', error);
+          // Handle error, e.g., show a message to the user
+          return null;
+        }
+      }
 
-            player.on('pause', () => {
-                updateStatus('Stream paused.', 'yellow');
-            });
+      /********** Your original Shaka player code **********/
+      shaka.polyfill.installAll();
 
-            player.on('buffer', () => {
-                updateStatus('Buffering...', 'blue');
-            });
+      if (!shaka.Player.isBrowserSupported()) {
+        console.error('Browser not supported');
+      } else {
+        const video = document.querySelector('video');
+        const player = new shaka.Player();
+        await player.attach(video);
 
-            player.on('error', (event) => {
-                console.error("JW Player Error:", event.message);
-                updateStatus(`Error: ${event.message}.`, 'red');
-            });
-
-            // Optional: Handle when the user goes fullscreen to hide the status message
-            player.on('fullscreen', (event) => {
-                if (event.fullscreen) {
-                    statusMessage.style.display = 'none';
-                } else {
-                    statusMessage.style.display = 'block';
-                }
-            });
+        const container = document.querySelector('.shaka-video-container');
+        const ui = new shaka.ui.Overlay(player, container, video);
+        
+        ui.configure({
+          controlPanelElements: [
+            'play_pause', 'time_and_duration', 'spacer', 'language', 'quality',
+            'mute', 'volume', 'captions', 'picture_in_picture', 'fullscreen'
+          ],
+          volumeBarColors: {
+            base: 'rgba(255, 255, 255, 0.3)',
+            level: 'var(--accent-color)'
+          },
+          seekBarColors: {
+            base: 'rgba(255, 255, 255, 0.3)',
+            buffered: 'rgba(255, 255, 255, 0.5)',
+            played: 'var(--primary-color)'
+          }
         });
-    </script>
 
+        // Event listener to hide the loading spinner when playback starts
+        player.addEventListener('loadeddata', () => {
+          loadingOverlay.style.opacity = '0';
+          setTimeout(() => { loadingOverlay.classList.add('hidden'); }, 300);
+        });
+
+        // Event listener to show spinner when playback is waiting for data
+        player.addEventListener('waiting', () => {
+          loadingOverlay.classList.remove('hidden');
+          loadingOverlay.style.opacity = '1';
+        });
+
+        // --- Fetching stream and cookie data ---
+        let cookieHeader = "__hdnea__=st=1757874601~exp=1757961001~acl=/*~hmac=dda4971d403f55cb3c23e77f228ed2279b79eb06f381433bfaf545ec799e181f";
+        const m3uUrl = "https://raw.githubusercontent.com/alex4528/m3u/refs/heads/main/jstar.m3u";
+
+        try {
+          const m3uResponse = await fetch(m3uUrl);
+          const m3uText = await m3uResponse.text();
+          const lines = m3uText.split('\n');
+
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('Star_Sports_HD1')) {
+              for (let j = i - 1; j >= 0; j--) {
+                if (lines[j].startsWith('#EXTHTTP:')) {
+                  const cookieMatch = lines[j].match(/"cookie":"([^"]+)"/);
+                  if (cookieMatch) {
+                    cookieHeader = cookieMatch[1];
+                  }
+                  break;
+                }
+              }
+              break;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch M3U:', error);
+        }
+
+        player.configure({
+          streaming: {
+            lowLatencyMode: true,
+            bufferingGoal: 15,
+            rebufferingGoal: 2,
+            bufferBehind: 15,
+            retryParameters: { timeout: 10000, maxAttempts: 5, baseDelay: 300, backoffFactor: 1.2 },
+            segmentRequestTimeout: 8000,
+            segmentPrefetchLimit: 2,
+            useNativeHlsOnSafari: true
+          },
+          manifest: { retryParameters: { timeout: 8000, maxAttempts: 3 } }
+        });
+
+        player.getNetworkingEngine().registerRequestFilter((type, request) => {
+          request.headers['Referer'] = 'https://www.jiotv.com/';
+          request.headers['User-Agent'] = "plaYtv/7.1.5 (Linux;Android 13) ExoPlayerLib/2.11.6";
+          request.headers['Cookie'] = cookieHeader;
+
+          if (
+            (type === shaka.net.NetworkingEngine.RequestType.MANIFEST ||
+             type === shaka.net.NetworkingEngine.RequestType.SEGMENT) &&
+            request.uris[0] && !request.uris[0].includes('__hdnea__=')
+          ) {
+            const separator = request.uris[0].includes('?') ? '&' : '?';
+            request.uris[0] += separator + cookieHeader;
+          }
+        });
+
+        const streamData = await fetchStreamData();
+        if (streamData) {
+          player.configure({ drm: streamData.drmConfig });
+          try {
+            await player.load(streamData.streamUrl);
+          } catch (error) {
+            console.error('Load error:', error);
+          }
+        }
+      }
+
+      /********** Telegram modal logic **********/
+      const modal = document.getElementById('telegramModal');
+      const closeButton = document.getElementById('closeButton');
+      const joinLink = document.getElementById('joinLink');
+
+      function hideModal() {
+        if (!modal.classList.contains('hidden')) {
+          modal.style.opacity = '0';
+          setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+          }, 500);
+        }
+      }
+
+      if (closeButton) {
+        closeButton.addEventListener('click', (e) => { e.preventDefault(); hideModal(); });
+      }
+      if (joinLink) {
+        joinLink.addEventListener('click', () => { hideModal(); });
+      }
+      modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+      document.addEventListener('keydown', (e) => { if ((e.key === 'Escape' || e.key === 'Esc') && !modal.classList.contains('hidden')) hideModal(); });
+      setTimeout(() => { hideModal(); }, 10000);
+
+    });
+  </script>
 </body>
 </html>
-
