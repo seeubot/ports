@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>SEEUTV</title>
+    <title>SEEUTV Player</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css" crossorigin="anonymous">
@@ -107,24 +107,7 @@
             background: var(--primary-color) !important;
             border-radius: 50px;
         }
-
-        /* Stream selector */
-        .shaka-stream-selector-button {
-            background: transparent !important;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .shaka-stream-selector-button:hover {
-            background: rgba(255,255,255,0.1) !important;
-            color: var(--primary-color);
-        }
-
+        
         /* Modal */
         .modal {
             position: fixed;
@@ -304,56 +287,12 @@
             0% { transform: rotateX(35deg) rotateY(55deg) rotateZ(0); }
             100% { transform: rotateX(35deg) rotateY(55deg) rotateZ(360deg); }
         }
-
-        /* Notification Toast */
-        .notification-toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: rgba(30, 41, 59, 0.9);
-            color: var(--text-color);
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: none;
-            flex-direction: column;
-            align-items: flex-start;
-            z-index: 10000;
-            animation: slideIn 0.5s ease-out forwards;
-        }
-        
-        .notification-toast.show {
-            display: flex;
-        }
-        
-        .notification-toast h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .notification-toast p {
-            margin: 5px 0 0;
-            font-size: 14px;
-            color: #94a3b8;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateY(100px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
     </style>
 </head>
 
 <body>
 
-    <a id="tgBannerLink" class="tg-banner" href="https://t.me/+qdLjzK5bWoViOWQ1" target="_blank" rel="noopener">
+    <a id="tgBannerLink" class="tg-banner" href="https://t.me/+e3-eAje291cxNGNl" target="_blank" rel="noopener">
         <img src="https://i.pinimg.com/originals/31/2a/f9/312af9235aadad69655688eaee97eabf.png" alt="Telegram">
         <span>Join @ᴍᴀᴛᴄʜᴇꜱ ʟɪɴᴋꜱ</span>
     </a>
@@ -386,11 +325,6 @@
         <div class="ring"></div>
     </div>
 
-    <div id="notificationToast" class="notification-toast">
-        <h3 id="toastTitle">New Stream Available!</h3>
-        <p id="toastMessage">Click to select the new stream.</p>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             /********** Chrome check **********/
@@ -403,10 +337,6 @@
             }
             
             const loadingOverlay = document.getElementById('loadingOverlay');
-            const notificationToast = document.getElementById('notificationToast');
-            let currentStreams = [];
-            let player;
-            let ui;
 
             /********** Fetch stream data from a simulated secure endpoint **********/
             async function fetchStreamData() {
@@ -417,116 +347,25 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     const data = await response.json();
-                    return data.streams;
+                    return data;
                 } catch (error) {
                     console.error('Failed to fetch stream data:', error);
                     return null;
                 }
             }
-            
-            /********** Update stream selection menu **********/
-            function updateStreamMenu() {
-                if (!ui || !player) return;
 
-                const controls = ui.get :w
-                ;
-                const streamSelector = document.createElement('button');
-                streamSelector.className = 'shaka-stream-selector-button';
-                streamSelector.textContent = 'Streams';
-                streamSelector.onclick = () => {
-                    const existingMenu = document.querySelector('.shaka-stream-menu');
-                    if (existingMenu) {
-                        existingMenu.remove();
-                        return;
-                    }
-                    
-                    const menu = document.createElement('div');
-                    menu.className = 'shaka-stream-menu shaka-overflow-button-menu shaka-no-overflow-menu';
-                    menu.style.position = 'absolute';
-                    menu.style.bottom = 'calc(100% + 10px)';
-                    menu.style.right = '0';
-                    menu.style.background = '#1e293b';
-                    menu.style.borderRadius = '10px';
-                    menu.style.padding = '10px';
-                    menu.style.border = '1px solid var(--border-color)';
-
-                    currentStreams.forEach(stream => {
-                        const item = document.createElement('button');
-                        item.textContent = stream.name;
-                        item.className = 'shaka-stream-menu-item shaka-button';
-                        item.style.marginBottom = '5px';
-                        item.onclick = async () => {
-                            loadingOverlay.style.display = 'block';
-                            try {
-                                player.configure({ drm: stream.drmConfig });
-                                await player.load(stream.streamUrl);
-                                menu.remove();
-                            } catch (e) {
-                                console.error('Error loading stream:', e);
-                                loadingOverlay.style.display = 'none';
-                            }
-                        };
-                        menu.appendChild(item);
-                    });
-
-                    controls.appendChild(menu);
-                };
-
-                const spacer = controls.querySelector('.shaka-spacer');
-                if (spacer) {
-                    spacer.parentNode.insertBefore(streamSelector, spacer.nextSibling);
-                }
-            }
-
-            /********** Check for new streams and notify user **********/
-            async function checkForNewStreams() {
-                const newStreams = await fetchStreamData();
-                if (newStreams && JSON.stringify(newStreams) !== JSON.stringify(currentStreams)) {
-                    currentStreams = newStreams;
-                    if (newStreams.length > 1) {
-                        // Show stream selection menu if there are multiple streams
-                        updateStreamMenu();
-                        showNotification('New Streams Added!', 'Click the "Streams" button to switch.');
-                    } else if (newStreams.length === 1) {
-                        // Auto-load the new stream if it's the only one
-                        try {
-                            loadingOverlay.style.display = 'block';
-                            player.configure({ drm: newStreams[0].drmConfig });
-                            await player.load(newStreams[0].streamUrl);
-                            showNotification('New Stream Available!', 'The player has updated automatically.');
-                        } catch (e) {
-                            console.error('Error loading new stream:', e);
-                        }
-                    }
-                }
-            }
-            
-            /********** Show a temporary notification toast **********/
-            function showNotification(title, message) {
-                const toastTitle = document.getElementById('toastTitle');
-                const toastMessage = document.getElementById('toastMessage');
-                
-                toastTitle.textContent = title;
-                toastMessage.textContent = message;
-                
-                notificationToast.classList.add('show');
-                setTimeout(() => {
-                    notificationToast.classList.remove('show');
-                }, 5000);
-            }
-
-            /********** Main player setup **********/
+            /********** Your original Shaka player code **********/
             shaka.polyfill.installAll();
 
             if (!shaka.Player.isBrowserSupported()) {
                 console.error('Browser not supported');
             } else {
                 const video = document.querySelector('video');
-                player = new shaka.Player();
+                const player = new shaka.Player();
                 await player.attach(video);
 
                 const container = document.querySelector('.shaka-video-container');
-                ui = new shaka.ui.Overlay(player, container, video);
+                const ui = new shaka.ui.Overlay(player, container, video);
                 
                 ui.configure({
                     controlPanelElements: [
@@ -544,10 +383,12 @@
                     }
                 });
 
+                // Event listener to hide the loading spinner when playback starts
                 player.addEventListener('loadeddata', () => {
                     loadingOverlay.style.display = 'none';
                 });
 
+                // Event listener to show spinner when playback is waiting for data
                 player.addEventListener('waiting', () => {
                     loadingOverlay.style.display = 'block';
                 });
@@ -608,21 +449,15 @@
                     }
                 });
 
-                currentStreams = await fetchStreamData();
-                if (currentStreams && currentStreams.length > 0) {
-                    player.configure({ drm: currentStreams[0].drmConfig });
+                const streamData = await fetchStreamData();
+                if (streamData) {
+                    player.configure({ drm: streamData.drmConfig });
                     try {
-                        await player.load(currentStreams[0].streamUrl);
-                        if (currentStreams.length > 1) {
-                            updateStreamMenu();
-                        }
+                        await player.load(streamData.streamUrl);
                     } catch (error) {
                         console.error('Load error:', error);
                     }
                 }
-
-                // Check for new streams every 30 seconds
-                setInterval(checkForNewStreams, 30000);
             }
 
             /********** Right-click and DevTools block logic **********/
