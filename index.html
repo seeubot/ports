@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Enhanced Sony LIV Player</title>
+    <title>SEEUTV</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css" crossorigin="anonymous">
@@ -353,13 +353,11 @@
 
 <body>
 
-    <!-- Telegram Banner -->
     <a id="tgBannerLink" class="tg-banner" href="https://t.me/+qdLjzK5bWoViOWQ1" target="_blank" rel="noopener">
         <img src="https://i.pinimg.com/originals/31/2a/f9/312af9235aadad69655688eaee97eabf.png" alt="Telegram">
         <span>Join @ᴍᴀᴛᴄʜᴇꜱ ʟɪɴᴋꜱ</span>
     </a>
 
-    <!-- Telegram Popup Modal -->
     <div id="telegramModal" class="modal" aria-hidden="false" role="dialog" aria-modal="true">
         <div class="modal-content" role="document" aria-labelledby="modalTitle" aria-describedby="modalDesc">
             <h2 id="modalTitle">Join our Telegram</h2>
@@ -371,7 +369,6 @@
         </div>
     </div>
 
-    <!-- Chrome Only Modal -->
     <div id="chromeModal" class="modal hidden" role="dialog" aria-modal="true">
         <div class="modal-content">
             <h2>Please Open in Chrome</h2>
@@ -383,14 +380,12 @@
         <video autoplay playsinline preload="metadata" poster=""></video>
     </div>
 
-    <!-- Loading spinner overlay -->
     <div id="loadingOverlay" class="loader">
         <div class="ring"></div>
         <div class="ring"></div>
         <div class="ring"></div>
     </div>
 
-    <!-- Stream Update Notification Toast -->
     <div id="notificationToast" class="notification-toast">
         <h3 id="toastTitle">New Stream Available!</h3>
         <p id="toastMessage">Click to select the new stream.</p>
@@ -668,6 +663,7 @@
             /********** Telegram modal logic **********/
             const modal = document.getElementById('telegramModal');
             const closeButton = document.getElementById('closeButton');
+            const joinLink = document.getElementById('joinLink');
 
             function hideModal() {
                 if (!modal.classList.contains('hidden')) {
@@ -681,6 +677,9 @@
 
             if (closeButton) {
                 closeButton.addEventListener('click', (e) => { e.preventDefault(); hideModal(); });
+            }
+            if (joinLink) {
+                joinLink.addEventListener('click', () => { hideModal(); });
             }
             modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
             document.addEventListener('keydown', (e) => { 
