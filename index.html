@@ -5,21 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Enhanced Sony LIV Player</title>
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css" crossorigin="anonymous">
+  <!-- Plyr CSS -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
     :root {
-      --primary-color: #facc15;
-      --accent-color: #06b6d4;
-      --bg-color: #000;
-      --text-color: #f3f4f6;
+      --primary-color: #6366f1; /* Indigo */
+      --accent-color: #a855f7; /* Purple */
+      --bg-color: #0d1117;
+      --text-color: #e2e8f0;
       --card-bg: rgba(255, 255, 255, 0.05);
-      --border-color: rgba(255, 255, 255, 0.1);
+      --border-color: rgba(255, 255, 255, 0.15);
+      --highlight-color: #4f46e5;
+      --shadow-color: rgba(0,0,0,0.5);
+      --plyr-color-main: var(--primary-color);
+      --plyr-video-controls-background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+      --plyr-video-control-color: var(--text-color);
+      --plyr-menu-color: var(--text-color);
+      --plyr-menu-background: var(--bg-color);
+      --plyr-tooltip-background: var(--bg-color);
+      --plyr-tooltip-color: var(--text-color);
+      --plyr-control-icon-size: 18px;
     }
+    
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       background: var(--bg-color);
@@ -28,66 +42,119 @@
       overflow: hidden;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
-    .shaka-video-container {
+    
+    .player-container {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.8s ease-out;
     }
-    video {
+    
+    .video-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    #player {
       width: 100%;
       height: 100%;
       background: var(--bg-color);
       object-fit: contain;
     }
-
-    /* Player Controls Customization */
-    .shaka-controls-container {
-      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    
+    /* Custom Plyr Styles */
+    .plyr--video .plyr__controls {
+      padding: 20px;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
     }
-    .shaka-play-button, .shaka-mute-button, .shaka-fullscreen-button {
-      background-color: transparent !important;
-      border: none;
-    }
-    .shaka-button-text, .shaka-time, .shaka-duration {
-      font-weight: 500;
-      color: var(--text-color);
-    }
-    .shaka-controls-container .shaka-seek-bar-container .shaka-seek-bar {
-      background: var(--border-color);
-      border-radius: 50px;
-      height: 8px;
-    }
-    .shaka-seek-bar-container .shaka-seek-bar-played {
+    
+    .plyr__control:hover, .plyr__control[aria-expanded="true"] {
       background: var(--primary-color) !important;
+    }
+    
+    .plyr__progress__buffer {
       border-radius: 50px;
     }
-    .shaka-seek-bar-container .shaka-seek-bar-buffered {
-      background: rgba(255, 255, 255, 0.3) !important;
-      border-radius: 50px;
+    
+    .plyr__menu__container .plyr__control {
+      transition: all 0.3s ease;
     }
-    .shaka-seek-bar-container .shaka-seek-bar-thumb {
-      background-color: var(--primary-color) !important;
-      border: 3px solid #fff;
-      box-shadow: 0 0 5px rgba(0,0,0,0.4);
-      height: 16px;
-      width: 16px;
-      margin-top: -4px;
-      transition: transform 0.2s ease;
+    
+    .plyr__menu__container .plyr__control:hover {
+      transform: translateX(5px);
     }
-    .shaka-seek-bar-container .shaka-seek-bar-thumb:hover {
-      transform: scale(1.2);
+    
+    .plyr--full-ui input[type="range"] {
+      color: var(--primary-color);
     }
-    .shaka-volume-bar-container .shaka-volume-bar {
-      background: var(--border-color) !important;
-      border-radius: 50px;
-      height: 8px;
+    
+    /* Channel Selector */
+    .channel-selector {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transform: translateY(-20px);
+      animation: slideDown 0.5s ease forwards 0.3s;
+      opacity: 0;
     }
-    .shaka-volume-bar-container .shaka-volume-bar-level {
-      background: var(--accent-color) !important;
-      border-radius: 50px;
+    
+    .channel-selector select {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
-
+    
+    .channel-selector select:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: var(--primary-color);
+    }
+    
+    /* Info Panel */
+    .info-panel {
+      position: absolute;
+      bottom: 100px;
+      left: 20px;
+      z-index: 10;
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 16px;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transform: translateY(20px);
+      animation: slideUp 0.5s ease forwards 0.5s;
+      opacity: 0;
+    }
+    
+    .info-panel h3 {
+      color: var(--text-color);
+      font-size: 18px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    .info-panel p {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
     /* Modal */
     .modal {
       position: fixed;
@@ -95,18 +162,20 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      backdrop-filter: blur(6px);
-      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      background: rgba(0,0,0,0.8);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      animation: fadeIn .5s ease;
-      transition: opacity .5s;
+      opacity: 0;
+      animation: fadeIn .5s ease forwards;
     }
-    .modal.hidden { display: none !important; }
+    
+    .modal.hidden { display: none; }
+    
     .modal-content {
-      background: var(--card-bg);
+      background: #1e293b;
       border: 1px solid var(--border-color);
       border-radius: 20px;
       padding: 30px 25px;
@@ -114,17 +183,18 @@
       max-width: 400px;
       text-align: center;
       color: var(--text-color);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       transform: scale(.95);
-      animation: scaleIn .4s ease forwards;
+      animation: scaleIn .4s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
     }
+    
     .modal-content h2 { font-size: 24px; font-weight: 700; color: var(--primary-color); margin-bottom: 16px; }
-    .modal-content p { font-size: 16px; color: #d1d5db; margin-bottom: 24px; line-height: 1.5; }
+    .modal-content p { font-size: 16px; color: #94a3b8; margin-bottom: 24px; line-height: 1.5; }
     .modal-content strong { color: #fff; }
+    
     .modal-content .btn { 
       width: 100%; 
-      padding: 12px; 
+      padding: 14px; 
       font-size: 16px; 
       border: none; 
       border-radius: 12px; 
@@ -135,58 +205,77 @@
       font-weight: 600;
       text-decoration: none;
     }
+    
     #joinButton { 
-      background: linear-gradient(to right, #3b82f6, #06b6d4); 
+      background: linear-gradient(90deg, #6366f1, #a855f7); 
       color: #fff; 
     }
     #joinButton:hover { 
-      background: linear-gradient(to right, #2563eb, #0891b2); 
-      transform: scale(1.02); 
+      background: linear-gradient(90deg, #4f46e5, #9333ea); 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
     }
+    
     #closeButton { 
       background: rgba(255,255,255,0.1); 
       color: var(--text-color); 
     }
     #closeButton:hover { 
       background: rgba(255,255,255,0.15); 
-      transform: scale(1.02); 
+      transform: translateY(-2px); 
     }
-
-    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-    @keyframes scaleIn { to { transform: scale(1); opacity: 1 } }
-
+    
     /* Banner */
     .tg-banner {
       position: absolute;
       top: 16px;
       left: 16px;
-      background: linear-gradient(135deg, rgba(29,161,242,0.85), rgba(0,119,181,0.85));
+      background: linear-gradient(135deg, #1d9bf0, #0077b5);
       backdrop-filter: blur(8px);
-      border-radius: 12px;
-      padding: 10px 16px;
+      border-radius: 16px;
+      padding: 12px 18px;
       display: flex;
       align-items: center;
       color: #fff;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
       z-index: 1000;
       text-decoration: none;
-      transition: transform .2s ease;
+      transition: transform .3s ease, box-shadow .3s ease;
+      transform: translateX(-100px);
+      animation: slideInRight 0.6s ease forwards 0.4s;
     }
+    
     .tg-banner:hover {
-      transform: scale(1.05);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
-    .tg-banner img { width: 28px; height: 28px; margin-right: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); display: block; }
-    .tg-banner span { font-size: 15px; font-weight: 600; letter-spacing: .4px; }
-
+    
+    .tg-banner img { 
+      width: 32px; 
+      height: 32px; 
+      margin-right: 12px; 
+      border-radius: 50%; 
+      border: 3px solid rgba(255,255,255,0.8); 
+      display: block; 
+    }
+    
+    .tg-banner span { 
+      font-size: 15px; 
+      font-weight: 600; 
+      letter-spacing: .4px; 
+    }
+    
     /* Chrome Only Modal */
     #chromeModal .modal-content {
-      background: rgba(255, 0, 0, 0.1);
-      border: 1px solid rgba(255, 0, 0, 0.3);
+      background: #dc2626;
+      border: 1px solid #ef4444;
+      color: #fee2e2;
     }
+    
     #chromeModal h2 {
-      color: #f87171;
+      color: #fca5a5;
     }
-
+    
     /* Loading Spinner */
     .spinner-overlay {
       position: absolute;
@@ -201,7 +290,7 @@
       z-index: 999;
       transition: opacity 0.3s;
     }
-
+    
     .spinner {
       border: 4px solid rgba(255, 255, 255, 0.3);
       border-top: 4px solid var(--primary-color);
@@ -210,10 +299,78 @@
       height: 40px;
       animation: spin 1s linear infinite;
     }
-
+    
+    /* Animations */
+    @keyframes fadeIn { 
+      from { opacity: 0 } 
+      to { opacity: 1 } 
+    }
+    
+    @keyframes scaleIn { 
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes slideInRight {
+      from { transform: translateX(-100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Quality indicator */
+    .quality-indicator {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    /* Volume control animation */
+    .plyr--video .plyr__volume {
+      transition: transform 0.3s ease;
+    }
+    
+    .plyr--video .plyr__control--overlaid {
+      background: rgba(99, 102, 241, 0.8);
+      transition: all 0.3s ease;
+    }
+    
+    .plyr--video .plyr__control--overlaid:hover {
+      background: rgba(99, 102, 241, 1);
+      transform: scale(1.1);
+    }
+    
+    /* Controls highlight animation */
+    @keyframes controlPulse {
+      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+    
+    .plyr__control.pulse {
+      animation: controlPulse 1.5s infinite;
     }
   </style>
 </head>
@@ -225,6 +382,39 @@
     <img src="https://i.pinimg.com/originals/31/2a/f9/312af9235aadad69655688eaee97eabf.png" alt="Telegram">
     <span>Join @ᴍᴀᴛᴄʜᴇꜱ ʟɪɴᴋꜱ</span>
   </a>
+
+  <!-- Channel Selector -->
+  <div class="channel-selector">
+    <select id="channelSelect">
+      <option value="">Select Channel</option>
+      <option value="https://example.com/stream1.m3u8">Star Sports HD 1</option>
+      <option value="https://example.com/stream2.m3u8">Star Sports HD 2</option>
+      <option value="https://example.com/stream3.m3u8">Sony Ten 1</option>
+      <option value="https://example.com/stream4.m3u8">Sony Ten 2</option>
+    </select>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel">
+    <h3>Live Cricket Match</h3>
+    <p>India vs Australia - T20 World Cup 2023</p>
+  </div>
+
+  <!-- Player Container -->
+  <div class="player-container">
+    <div class="video-wrapper">
+      <video 
+        id="player" 
+        playsinline 
+        controls
+        poster="https://images.unsplash.com/photo-1590133504286-588f297c2a70?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80">
+        <!-- Source will be set dynamically -->
+      </video>
+    </div>
+  </div>
+
+  <!-- Quality Indicator -->
+  <div class="quality-indicator" id="qualityIndicator">HD 1080p</div>
 
   <!-- Telegram Popup Modal -->
   <div id="telegramModal" class="modal" aria-hidden="false" role="dialog" aria-modal="true">
@@ -246,15 +436,13 @@
     </div>
   </div>
 
-  <div class="shaka-video-container" data-shaka-player>
-    <video autoplay playsinline preload="metadata" poster=""></video>
-  </div>
-
   <!-- Loading spinner overlay -->
   <div id="loadingOverlay" class="spinner-overlay">
     <div class="spinner"></div>
   </div>
 
+  <!-- Plyr JS -->
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       /********** Chrome check **********/
@@ -267,132 +455,125 @@
       }
       
       const loadingOverlay = document.getElementById('loadingOverlay');
-
-      /********** Fetch stream data from a simulated secure endpoint **********/
-      async function fetchStreamData() {
-        const url = './data.json';
-        try {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+      const qualityIndicator = document.getElementById('qualityIndicator');
+      
+      /********** Initialize Plyr Player **********/
+      const player = new Plyr('#player', {
+        controls: [
+          'play-large',
+          'play',
+          'progress',
+          'current-time',
+          'duration',
+          'mute',
+          'volume',
+          'settings',
+          'pip',
+          'airplay',
+          'fullscreen'
+        ],
+        hideControls: true,
+        seekTime: 10,
+        volume: 0.8,
+        clickToPlay: true,
+        disableContextMenu: true,
+        loadSprite: false,
+        iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg',
+        blankVideo: 'https://cdn.plyr.io/static/blank.mp4'
+      });
+      
+      // Set a default source
+      player.source = {
+        type: 'video',
+        title: 'Live Sports Stream',
+        sources: [
+          {
+            src: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+            type: 'application/x-mpegURL'
           }
-          const data = await response.json();
-          return data;
-        } catch (error) {
-          console.error('Failed to fetch stream data:', error);
-          // Handle error, e.g., show a message to the user
-          return null;
+        ],
+        poster: 'https://images.unsplash.com/photo-1590133504286-588f297c2a70?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+      };
+      
+      /********** Event Listeners **********/
+      player.on('ready', event => {
+        console.log('Player is ready');
+        // Add pulse animation to play button
+        const playBtn = document.querySelector('.plyr__control--overlaid');
+        if (playBtn) {
+          playBtn.classList.add('pulse');
         }
-      }
-
-      /********** Your original Shaka player code **********/
-      shaka.polyfill.installAll();
-
-      if (!shaka.Player.isBrowserSupported()) {
-        console.error('Browser not supported');
-      } else {
-        const video = document.querySelector('video');
-        const player = new shaka.Player();
-        await player.attach(video);
-
-        const container = document.querySelector('.shaka-video-container');
-        const ui = new shaka.ui.Overlay(player, container, video);
+      });
+      
+      player.on('play', event => {
+        loadingOverlay.style.opacity = '0';
+        setTimeout(() => { loadingOverlay.classList.add('hidden'); }, 300);
         
-        ui.configure({
-          controlPanelElements: [
-            'play_pause', 'time_and_duration', 'spacer', 'language', 'quality',
-            'mute', 'volume', 'captions', 'picture_in_picture', 'fullscreen'
-          ],
-          volumeBarColors: {
-            base: 'rgba(255, 255, 255, 0.3)',
-            level: 'var(--accent-color)'
-          },
-          seekBarColors: {
-            base: 'rgba(255, 255, 255, 0.3)',
-            buffered: 'rgba(255, 255, 255, 0.5)',
-            played: 'var(--primary-color)'
-          }
-        });
-
-        // Event listener to hide the loading spinner when playback starts
-        player.addEventListener('loadeddata', () => {
-          loadingOverlay.style.opacity = '0';
-          setTimeout(() => { loadingOverlay.classList.add('hidden'); }, 300);
-        });
-
-        // Event listener to show spinner when playback is waiting for data
-        player.addEventListener('waiting', () => {
+        // Show quality indicator briefly
+        qualityIndicator.style.opacity = '1';
+        setTimeout(() => {
+          qualityIndicator.style.opacity = '0';
+        }, 2000);
+      });
+      
+      player.on('waiting', event => {
+        loadingOverlay.classList.remove('hidden');
+        loadingOverlay.style.opacity = '1';
+      });
+      
+      player.on('qualitychange', event => {
+        // Show quality indicator when quality changes
+        const quality = event.detail.quality;
+        qualityIndicator.textContent = quality === 2160 ? '4K' : 
+                                      quality === 1440 ? 'QHD' : 
+                                      quality === 1080 ? 'Full HD' : 
+                                      quality === 720 ? 'HD' : 
+                                      quality === 576 ? 'SD' : 
+                                      quality === 480 ? 'SD' : 
+                                      quality === 360 ? 'Low' : 
+                                      quality === 240 ? 'Very Low' : 'Auto';
+        
+        qualityIndicator.style.opacity = '1';
+        setTimeout(() => {
+          qualityIndicator.style.opacity = '0';
+        }, 2000);
+      });
+      
+      player.on('error', event => {
+        console.error('Player error:', event.detail);
+        // Try to reload after a delay
+        setTimeout(() => {
+          player.play();
+        }, 3000);
+      });
+      
+      /********** Channel Selector Functionality **********/
+      const channelSelect = document.getElementById('channelSelect');
+      channelSelect.addEventListener('change', function() {
+        if (this.value) {
           loadingOverlay.classList.remove('hidden');
           loadingOverlay.style.opacity = '1';
-        });
-
-        // --- Fetching stream and cookie data ---
-        let cookieHeader = "__hdnea__=st=1757874601~exp=1757961001~acl=/*~hmac=dda4971d403f55cb3c23e77f228ed2279b79eb06f381433bfaf545ec799e181f";
-        const m3uUrl = "https://raw.githubusercontent.com/alex4528/m3u/refs/heads/main/jstar.m3u";
-
-        try {
-          const m3uResponse = await fetch(m3uUrl);
-          const m3uText = await m3uResponse.text();
-          const lines = m3uText.split('\n');
-
-          for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes('Star_Sports_HD1')) {
-              for (let j = i - 1; j >= 0; j--) {
-                if (lines[j].startsWith('#EXTHTTP:')) {
-                  const cookieMatch = lines[j].match(/"cookie":"([^"]+)"/);
-                  if (cookieMatch) {
-                    cookieHeader = cookieMatch[1];
-                  }
-                  break;
-                }
+          
+          player.source = {
+            type: 'video',
+            title: 'Live Sports Stream',
+            sources: [
+              {
+                src: this.value,
+                type: 'application/x-mpegURL'
               }
-              break;
-            }
-          }
-        } catch (error) {
-          console.error('Failed to fetch M3U:', error);
+            ]
+          };
         }
-
-        player.configure({
-          streaming: {
-            lowLatencyMode: true,
-            bufferingGoal: 15,
-            rebufferingGoal: 2,
-            bufferBehind: 15,
-            retryParameters: { timeout: 10000, maxAttempts: 5, baseDelay: 300, backoffFactor: 1.2 },
-            segmentRequestTimeout: 8000,
-            segmentPrefetchLimit: 2,
-            useNativeHlsOnSafari: true
-          },
-          manifest: { retryParameters: { timeout: 8000, maxAttempts: 3 } }
-        });
-
-        player.getNetworkingEngine().registerRequestFilter((type, request) => {
-          request.headers['Referer'] = 'https://www.jiotv.com/';
-          request.headers['User-Agent'] = "plaYtv/7.1.5 (Linux;Android 13) ExoPlayerLib/2.11.6";
-          request.headers['Cookie'] = cookieHeader;
-
-          if (
-            (type === shaka.net.NetworkingEngine.RequestType.MANIFEST ||
-             type === shaka.net.NetworkingEngine.RequestType.SEGMENT) &&
-            request.uris[0] && !request.uris[0].includes('__hdnea__=')
-          ) {
-            const separator = request.uris[0].includes('?') ? '&' : '?';
-            request.uris[0] += separator + cookieHeader;
-          }
-        });
-
-        const streamData = await fetchStreamData();
-        if (streamData) {
-          player.configure({ drm: streamData.drmConfig });
-          try {
-            await player.load(streamData.streamUrl);
-          } catch (error) {
-            console.error('Load error:', error);
-          }
-        }
-      }
-
+      });
+      
+      /********** Simulate stream data fetch **********/
+      // In a real implementation, you would fetch this from your server
+      setTimeout(() => {
+        // Simulate setting a channel after data is "loaded"
+        channelSelect.value = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+      }, 1500);
+      
       /********** Telegram modal logic **********/
       const modal = document.getElementById('telegramModal');
       const closeButton = document.getElementById('closeButton');
@@ -417,7 +598,6 @@
       modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
       document.addEventListener('keydown', (e) => { if ((e.key === 'Escape' || e.key === 'Esc') && !modal.classList.contains('hidden')) hideModal(); });
       setTimeout(() => { hideModal(); }, 10000);
-
     });
   </script>
 </body>
