@@ -270,9 +270,7 @@
 
       /********** Fetch stream data from a simulated secure endpoint **********/
       async function fetchStreamData() {
-        // In a production environment, this would be a secure, authenticated API endpoint.
-        // For this example, we're fetching from a mock JSON file.
-        const url = 'https://gist.githubusercontent.com/username/gistid/raw/stream-data.json'; // This is a placeholder URL
+        const url = './data.json';
         try {
           const response = await fetch(url);
           if (!response.ok) {
