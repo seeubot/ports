@@ -1,14 +1,8 @@
-[
 {
-"name": "Live Stream 1 HD",
-"url": "https://tataplay.slivcdn.com/hls/live/2020591/TEN3HD/master_3500.m3u8"
-},
-{
-"name": "English Stream HD",
-"url": "https://tataplay.slivcdn.com/hls/live/2011747/TEN1HD/master_3500.m3u8"
-},
-{
-"name": "Multi Quality HD",
-"url": "https://livecfdai-mp.slivcdn.com/out/v1/63121d5e82594173a133541b021948e9/std_mdl-700300010.m3u8?hdnea=st=1757858255~exp=1757858555~acl=*~id=75e70355-b9fb-42b5-adae-e389d56a6829~hmac=7790c711349d66f47843b6c243c5057d0419f490a8efc08291fa6db659bc3531&originpath=/linear/hls/pa/event/RP1mckhwQQChze2hZfnZlA/stream/eb4c5818-eabc-4f27-9137-91a7cee122d5:BRU/master.m3u8"
+"drmConfig": {
+"clearKeys": {
+"9457eb90129456fa8ea95e10ba4ac51e": "e620a970cea474c491ac78ae71a4d764"
 }
-]
+},
+"streamUrl": "https://jiotvmblive.cdn.jio.com/bpk-tv/Star_Sports_HD2_BTS/output/index.mpd"
+}
